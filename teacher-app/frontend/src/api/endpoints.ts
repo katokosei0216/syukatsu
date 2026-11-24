@@ -16,6 +16,7 @@ const STUDENTS = {
   LIST: '/students',
   DETAIL: (studentId: number) => `/students/${studentId}`,
   COMPANIES: (studentId: number) => `/students/${studentId}/companies`,
+  SELECTION_MEMOS: (studentId: number) => `/students/${studentId}/selection-memos`,
 };
 
 // Guidance Memo関連

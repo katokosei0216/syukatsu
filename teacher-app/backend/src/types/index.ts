@@ -49,6 +49,12 @@ export interface SelectionMemo {
   created_at: string; // datetime
 }
 
+export interface SelectionMemoWithCompany extends SelectionMemo {
+  company_name: string;
+  job_type: string;
+  company_status: SelectionStatus;
+}
+
 export interface GuidanceMemo {
   id: number;
   student_id: number;
@@ -79,6 +85,11 @@ export interface StudentDashboardData extends Student {
   lastActivityDate?: string;
   isActive: boolean;
   hasOffer: boolean;
+}
+
+export interface DashboardFilter {
+  status?: SelectionStatus;
+  search?: string;
 }
 
 export {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { StudentDashboardData, DashboardStats, SelectionStatus, ACTIVE_STATUSES, OFFER_STATUS } from '../types';
 import { getDashboardStats, getDashboardStudents } from '../api/dashboardApi';
+import { downloadCSV } from '../api/exportApi';
 
 const statusColors: Record<SelectionStatus, string> = {
   '検討中': 'bg-slate-100 text-slate-600',
@@ -54,6 +55,11 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // CSVダウンロード
+  function handleDownloadCSV() {
+    downloadCSV({ status: filter || undefined, search: search || undefined });
   }
 
   // 学生の活動ステータスを判定
@@ -128,6 +134,9 @@ export default function DashboardPage() {
           </select>
           <button onClick={fetchData} className="btn btn-primary">
             検索
+          </button>
+          <button onClick={handleDownloadCSV} className="btn btn-secondary">
+            📥 CSVエクスポート
           </button>
         </div>
       </div>

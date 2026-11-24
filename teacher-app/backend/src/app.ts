@@ -7,6 +7,7 @@ import { Request, Response, NextFunction } from 'express';
 import dashboardRoutes from './routes/dashboard';
 import studentsRoutes from './routes/students';
 import companiesRoutes from './routes/companies';
+import exportRoutes from './routes/export';
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/students', studentsRoutes);
 app.use('/api/companies', companiesRoutes);
+app.use('/api/export', exportRoutes);
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
