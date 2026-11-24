@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}就活サポートシステム{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  {% set path = request.url.path %}
+  <nav>
+    <a class="brand" href="/">就活サポート</a>
+    <div class="nav-group">
+      <span class="nav-label">学生</span>
+      <a href="/req01" class="{% if path == '/req01' %}is-active{% endif %}">企業登録</a>
+      <a href="/req02" class="{% if path == '/req02' %}is-active{% endif %}">選考メモ</a>
+    </div>
+    <div class="nav-group">
+      <span class="nav-label">教員</span>
+      <a href="/req03" class="{% if path == '/req03' or path.startswith('/req04') %}is-active{% endif %}">ダッシュボード</a>
+      <a href="/req03/companies" class="{% if path.startswith('/req03/companies') %}is-active{% endif %}">企業別</a>
+    </div>
+  </nav>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

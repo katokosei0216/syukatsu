@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}就活サポートシステム{% endblock %}
+{% block content %}
+<div class="hero">
+  <h1>就活サポートシステム</h1>
+  <p>専門学校生の就職活動と、担任教員の進捗支援をひとつに。ローカルで動く無料のWebアプリです。</p>
+</div>
+
+<div class="role-grid">
+  <section class="role-card">
+    <h2><span class="badge badge-blue">学生</span> 就活の記録</h2>
+    <a class="feature-link" href="/req01">
+      <strong>志望企業の登録・状況更新</strong>
+      <span>応募先・職種・選考ステータスを管理する</span>
+    </a>
+    <a class="feature-link" href="/req02">
+      <strong>選考メモ・振り返り</strong>
+      <span>面接で聞かれたこと、次回の予定を記録する</span>
+    </a>
+  </section>
+
+  <section class="role-card">
+    <h2><span class="badge badge-orange">教員</span> クラスの支援</h2>
+    <a class="feature-link" href="/req03">
+      <strong>進捗ダッシュボード</strong>
+      <span>クラス全員の状況・要フォロー学生・直近の予定を確認</span>
+    </a>
+    <a class="feature-link" href="/req03/companies">
+      <strong>企業別の応募状況</strong>
+      <span>どの企業に何人応募しているかを一覧</span>
+    </a>
+  </section>
+</div>
+
+<div class="card">
+  <h2>教員向け機能</h2>
+  <ul class="feature-list">
+    <li>14日以上動きがない学生を「要フォロー」として自動抽出</li>
+    <li>履歴書添削・面談の指導メモをカテゴリ別に記録</li>
+    <li>選考メモをもとにChatGPTが面接アドバイスを提案(任意)</li>
+    <li>表示中の学生をCSV出力(Excelで開けます)</li>
+  </ul>
+</div>
+{% endblock %}

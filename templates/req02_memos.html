@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}選考メモ・振り返り記録{% endblock %}
+{% block content %}
+<h1>REQ-02 選考メモ・振り返り記録</h1>
+
+<div class="card">
+  <form method="get" action="/req02">
+    <label>学生:
+      <select name="student_id" onchange="this.form.submit()">
+        {% for s in students %}
+        <option value="{{ s.id }}" {% if s.id == student_id %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <input type="hidden" name="company_id" value="{{ company_id or '' }}">
+  </form>
+</div>
+
+<div class="card">
+  <h2>企業を選択</h2>
+  <ul class="company-list">
+    {% for c in companies %}
+    <li>
+      <a href="/req02?student_id={{ student_id }}&company_id={{ c['id'] }}">
+        {{ c["company_name"] }}({{ c["status"] }})
+      </a>
+    </li>
+    {% endfor %}
+    {% if not companies %}<li class="muted">登録企業がありません(REQ-01で登録)</li>{% endif %}
+  </ul>
+</div>
+
+{% if selected %}
+<div class="card">
+  <h2>{{ selected["company_name"] }} のメモ記録</h2>
+  <form method="post" action="/req02/memos">
+    <input type="hidden" name="student_id" value="{{ student_id }}">
+    <input type="hidden" name="company_id" value="{{ selected['id'] }}">
+    <label>次回選考日(面接日/締切): <input type="date" name="next_selection_date"></label>
+    <textarea name="memo" placeholder="面接で聞かれた質問・振り返りメモ"></textarea>
+    <button type="submit">メモを記録</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>過去のメモ</h2>
+  {% if memos %}
+  <table>
+    <tr><th>記録日時</th><th>次回選考日</th><th>メモ</th></tr>
+    {% for m in memos %}
+    <tr>
+      <td>{{ m["created_at"] }}</td>
+      <td>{{ m["next_selection_date"] or "-" }}</td>
+      <td>{{ m["memo"] or "-" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">メモはまだありません。</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

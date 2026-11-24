@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}進捗ダッシュボード{% endblock %}
+{% block content %}
+<h1>教員ダッシュボード</h1>
+<p class="muted">クラス全員の選考状況一覧。学生名をクリックすると詳細(REQ-04)へ。</p>
+
+<div class="stat-grid">
+  <div class="stat">
+    <div class="stat-label">クラス人数</div>
+    <div class="stat-value">{{ stats["total"] }}</div>
+  </div>
+  <div class="stat stat-green">
+    <div class="stat-label">内定者</div>
+    <div class="stat-value">{{ stats["offer"] }}</div>
+  </div>
+  <div class="stat stat-blue">
+    <div class="stat-label">活動中</div>
+    <div class="stat-value">{{ stats["active"] }}</div>
+  </div>
+  <div class="stat stat-orange">
+    <div class="stat-label">要フォロー</div>
+    <div class="stat-value">{{ stats["stale"] }}</div>
+  </div>
+  <div class="stat stat-gray">
+    <div class="stat-label">未活動</div>
+    <div class="stat-value">{{ stats["none"] }}</div>
+  </div>
+</div>
+
+{% if status_total %}
+<div class="card">
+  <div class="card-head">
+    <h2>選考ステータス別の企業数 <span class="muted">(全{{ status_total }}件)</span></h2>
+    <a class="btn-edit btn-small" href="/req03/companies">企業別の応募状況を見る</a>
+  </div>
+  {% set bar_class = {
+    "検討中": "bar-gray", "応募済み": "bar-blue", "書類選考": "bar-blue",
+    "一次面接": "bar-orange", "二次面接": "bar-orange", "最終面接": "bar-orange",
+    "内定": "bar-green", "お見送り": "bar-red"
+  } %}
+  <div class="bar-chart">
+    {% for b in status_bars %}
+    <div class="bar-row">
+      <span class="bar-label">{{ b["label"] }}</span>
+      <span class="bar-track">
+        <span class="bar-fill {{ bar_class.get(b['label'], 'bar-gray') }}" style="width: {{ b['percent'] }}%"></span>
+      </span>
+      <span class="bar-count">{{ b["count"] }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if alerts %}
+<div class="card card-alert">
+  <div class="card-head">
+    <h2>要フォロー({{ stale_days }}日以上動きがない学生)</h2>
+    <a class="btn-edit btn-small" href="/req03/export.csv?filter=stale">要フォローをCSV出力</a>
+  </div>
+  <ul class="alert-list">
+    {% for s in alerts %}
+    <li>
+      <a href="/req04/{{ s['id'] }}">{{ s["name"] }}</a>
+      <span class="muted">— {{ s["reason"] }}(応募 {{ s["applied_count"] }}社)</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% if upcoming %}
+<div class="card">
+  <h2>直近7日の予定(面接・締切・指導)</h2>
+  <div class="table-wrap">
+    <table>
+      <tr><th>日付</th><th>種別</th><th>学生</th><th>内容</th></tr>
+      {% for u in upcoming %}
+      <tr>
+        <td>{{ u["date"] }}</td>
+        <td><span class="badge {{ 'badge-orange' if u['type'] == '指導' else 'badge-blue' }}">{{ u["type"] }}</span></td>
+        <td><a href="/req04/{{ u['student_id'] }}">{{ u["student_name"] }}</a></td>
+        <td>{{ u["label"] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>学生一覧</h2>
+
+  {% set counts = {
+    "all": stats["total"], "stale": stats["stale"], "active": stats["active"],
+    "offer": stats["offer"], "none": stats["none"]
+  } %}
+  <div class="toolbar">
+    <div class="filters">
+      {% for key, label in filters %}
+      <a class="filter{% if current_filter == key %} is-active{% endif %}"
+         href="/req03?filter={{ key }}{% if q %}&q={{ q|urlencode }}{% endif %}">
+        {{ label }} <span class="filter-count">{{ counts[key] }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    <div class="toolbar-actions">
+      <form method="get" action="/req03" class="inline-form">
+        <input type="hidden" name="filter" value="{{ current_filter }}">
+        <input type="text" name="q" value="{{ q }}" placeholder="学生名で検索">
+        <button type="submit">検索</button>
+      </form>
+      <a class="btn-edit btn-small"
+         href="/req03/export.csv?filter={{ current_filter }}{% if q %}&q={{ q|urlencode }}{% endif %}">
+        表示中をCSV出力
+      </a>
+    </div>
+  </div>
+
+  {% if students %}
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>学生名</th><th>活動状況</th><th>応募</th><th>選考中</th>
+        <th>面接中</th><th>内定</th><th>最終更新</th>
+      </tr>
+      {% set badge_class = {
+        "未活動": "badge-gray", "活動中": "badge-blue",
+        "要フォロー": "badge-orange", "内定あり": "badge-green"
+      } %}
+      {% for s in students %}
+      <tr{% if s["activity"] == "要フォロー" %} class="row-stale"{% endif %}>
+        <td><a href="/req04/{{ s['id'] }}">{{ s["name"] }}</a></td>
+        <td>
+          <span class="badge {{ badge_class[s['activity']] }}">{{ s["activity"] }}</span>
+          {% if s["activity"] == "要フォロー" %}
+          <div class="reason">{{ s["reason"] }}</div>
+          {% endif %}
+        </td>
+        <td>{{ s["applied_count"] }}</td>
+        <td>{{ s["active_count"] }}</td>
+        <td>{{ s["interview_count"] }}</td>
+        <td>{{ s["offer_count"] }}</td>
+        <td>
+          {{ s["last_update"] or "-" }}
+          {% if s["days_since"] is not none %}
+          <div class="reason">{{ s["days_since"] }}日経過</div>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">条件に一致する学生はいません。</p>
+  {% endif %}
+</div>
+{% endblock %}

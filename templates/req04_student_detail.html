@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}学生詳細・指導記録{% endblock %}
+{% block content %}
+<p class="muted"><a href="/req03">← ダッシュボードに戻る</a></p>
+<h1>学生詳細: {{ student["name"] }}</h1>
+
+{% set badge_class = {
+  "未活動": "badge-gray", "活動中": "badge-blue",
+  "要フォロー": "badge-orange", "内定あり": "badge-green"
+} %}
+{% set category_class = {
+  "履歴書": "badge-blue", "面接": "badge-orange",
+  "ES": "badge-purple", "その他": "badge-gray"
+} %}
+{% set status_class = {
+  "検討中": "badge-gray", "応募済み": "badge-blue", "書類選考": "badge-blue",
+  "一次面接": "badge-orange", "二次面接": "badge-orange", "最終面接": "badge-orange",
+  "内定": "badge-green", "お見送り": "badge-red"
+} %}
+
+<div class="card{% if activity == '要フォロー' %} card-alert{% endif %}">
+  <h2>活動サマリー</h2>
+  <div class="summary-row">
+    <span class="badge {{ badge_class[activity] }}">{{ activity }}</span>
+    <span class="muted">応募 {{ applied_count }}社 / 内定 {{ offer_count }}社</span>
+    {% if days_since is not none %}
+    <span class="muted">最終更新から {{ days_since }}日</span>
+    {% endif %}
+  </div>
+  {% if activity == "要フォロー" and reason %}
+  <p class="alert-text">{{ reason }}。面談や履歴書添削の声かけを検討してください。</p>
+  {% endif %}
+
+  {% if upcoming %}
+  <h3>次回選考・締切</h3>
+  <ul class="company-list">
+    {% for u in upcoming %}
+    <li>{{ u["next_selection_date"] }} — {{ u["company_name"] }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if next_guidance %}
+  <h3>次回指導予定</h3>
+  <ul class="company-list">
+    {% for g in next_guidance %}
+    <li>
+      {{ g["next_guidance_date"] }} —
+      <span class="badge {{ category_class.get(g['category'], 'badge-gray') }}">{{ g["category"] }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>応募企業一覧</h2>
+  {% if companies %}
+  <div class="table-wrap">
+    <table>
+      <tr><th>企業名</th><th>志望職種</th><th>ステータス</th></tr>
+      {% for c in companies %}
+      <tr>
+        <td>{{ c["company_name"] }}</td>
+        <td>{{ c["job_type"] or "-" }}</td>
+        <td><span class="badge {{ status_class.get(c['status'], 'badge-gray') }}">{{ c["status"] }}</span></td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}<p class="muted">応募企業はまだありません。</p>{% endif %}
+</div>
+
+<div class="card">
+  <h2>選考メモ履歴</h2>
+  {% if memos %}
+  <div class="table-wrap">
+    <table>
+      <tr><th>記録日時</th><th>企業名</th><th>次回選考日</th><th>メモ</th></tr>
+      {% for m in memos %}
+      <tr>
+        <td>{{ m["created_at"] }}</td>
+        <td>{{ m["company_name"] }}</td>
+        <td>{{ m["next_selection_date"] or "-" }}</td>
+        <td>{{ m["memo"] or "-" }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}<p class="muted">メモはまだありません。</p>{% endif %}
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <h2>AI面接アドバイス(β)</h2>
+    <span class="badge badge-purple">ChatGPT</span>
+  </div>
+  {% if companies %}
+    {% if ai_configured %}
+    <p class="muted">
+      選考メモをもとに、次の選考に向けたアドバイスをChatGPTが提案します。
+      ボタンを押すと、この学生の選考メモと指導メモの内容がOpenAI APIに送信されます。
+    </p>
+    <form method="post" action="/req04/{{ student['id'] }}/ai-advice" class="inline-form">
+      <select name="company_id">
+        {% for c in companies %}
+        <option value="{{ c['id'] }}">
+          {{ c["company_name"] }}{% if c["job_type"] %}({{ c["job_type"] }}){% endif %} / {{ c["status"] }}
+        </option>
+        {% endfor %}
+      </select>
+      <button type="submit">アドバイスを生成</button>
+    </form>
+    {% else %}
+    <p class="muted">
+      OPENAI_API_KEY が未設定のため利用できません。
+      プロジェクト直下に <code>.env</code> を作成し、APIキーを設定してください。
+    </p>
+    {% endif %}
+  {% else %}
+  <p class="muted">応募企業を登録すると利用できます。</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>教員からの指導メモ</h2>
+  <p class="muted">履歴書添削・面談・日々の声かけなど、個別指導の記録を残せます。</p>
+  <form method="post" action="/req04/{{ student['id'] }}/guidance">
+    <div class="inline-form">
+      <select name="category">
+        {% for c in categories %}
+        <option value="{{ c }}"{% if c == default_category %} selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+      <label class="muted">次回指導日
+        <input type="date" name="next_guidance_date">
+      </label>
+    </div>
+    <textarea name="memo" placeholder="例: 履歴書の自己PRが抽象的。具体エピソードを1つに絞って書き直すよう指導。" required></textarea>
+    <button type="submit">指導メモを保存</button>
+  </form>
+
+  {% if guidance %}
+  <div class="filters guidance-filters">
+    <a class="filter{% if current_category == 'all' %} is-active{% endif %}"
+       href="/req04/{{ student['id'] }}">すべて <span class="filter-count">{{ guidance|length }}</span></a>
+    {% for c in categories %}
+    <a class="filter{% if current_category == c %} is-active{% endif %}"
+       href="/req04/{{ student['id'] }}?category={{ c|urlencode }}">
+      {{ c }} <span class="filter-count">{{ category_counts[c] }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if guidance_list %}
+  <div class="table-wrap">
+    <table>
+      <tr><th>記録日時</th><th>カテゴリ</th><th>次回指導日</th><th>メモ</th><th></th></tr>
+      {% for g in guidance_list %}
+      <tr>
+        <td class="nowrap">{{ g["created_at"] }}</td>
+        <td class="nowrap">
+          <span class="badge {{ category_class.get(g['category'], 'badge-gray') }}">{{ g["category"] }}</span>
+        </td>
+        <td class="nowrap{% if g['next_guidance_date'] and g['next_guidance_date'] < today %} date-overdue{% endif %}">
+          {{ g["next_guidance_date"] or "-" }}
+          {% if g["next_guidance_date"] and g["next_guidance_date"] < today %}
+          <div class="reason">期限超過</div>
+          {% endif %}
+        </td>
+        <td class="pre-wrap">{{ g["memo"] }}</td>
+        <td class="nowrap">
+          <div class="row-actions">
+            <a class="btn-edit btn-small" href="/req04/{{ student['id'] }}/guidance/{{ g['id'] }}/edit">編集</a>
+            <form method="post" action="/req04/{{ student['id'] }}/guidance/{{ g['id'] }}/delete"
+                  onsubmit="return confirm('この指導メモを削除しますか？');">
+              <button type="submit" class="btn-danger btn-small">削除</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% elif guidance %}
+  <p class="muted">このカテゴリの指導メモはありません。</p>
+  {% else %}<p class="muted">指導メモはまだありません。</p>{% endif %}
+</div>
+{% endblock %}

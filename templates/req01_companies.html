@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}志望企業登録・状況更新{% endblock %}
+{% block content %}
+<h1>REQ-01 志望企業登録・状況更新</h1>
+
+<div class="card">
+  <form method="get" action="/req01">
+    <label>学生:
+      <select name="student_id" onchange="this.form.submit()">
+        {% for s in students %}
+        <option value="{{ s.id }}" {% if s.id == student_id %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </form>
+</div>
+
+<div class="card">
+  <h2>企業を新規登録</h2>
+  <form method="post" action="/req01/companies" class="inline-form">
+    <input type="hidden" name="student_id" value="{{ student_id }}">
+    <input type="text" name="company_name" placeholder="企業名(必須)" required>
+    <input type="text" name="job_type" placeholder="志望職種(任意)">
+    <button type="submit">登録</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>登録済み企業</h2>
+  {% if companies %}
+  <table>
+    <tr><th>企業名</th><th>志望職種</th><th>選考ステータス</th></tr>
+    {% for c in companies %}
+    <tr>
+      <td>{{ c["company_name"] }}</td>
+      <td>{{ c["job_type"] }}</td>
+      <td>
+        <form method="post" action="/req01/companies/{{ c['id'] }}/status" class="inline-form">
+          <input type="hidden" name="student_id" value="{{ student_id }}">
+          <select name="status" onchange="this.form.submit()">
+            {% for st in status_options %}
+            <option value="{{ st }}" {% if c["status"] == st %}selected{% endif %}>{{ st }}</option>
+            {% endfor %}
+          </select>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">まだ登録がありません。上のフォームから追加してください。</p>
+  {% endif %}
+</div>
+{% endblock %}

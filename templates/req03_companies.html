@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}企業別の応募状況{% endblock %}
+{% block content %}
+<p class="muted"><a href="/req03">← ダッシュボードに戻る</a></p>
+<h1>企業別の応募状況</h1>
+<p class="muted">企業ごとの応募者数と選考結果を一覧できます。企業名をクリックすると志望者を表示します。</p>
+
+<div class="stat-grid">
+  <div class="stat">
+    <div class="stat-label">企業数</div>
+    <div class="stat-value">{{ stats["companies"] }}</div>
+  </div>
+  <div class="stat stat-blue">
+    <div class="stat-label">応募件数</div>
+    <div class="stat-value">{{ stats["applications"] }}</div>
+  </div>
+  <div class="stat stat-green">
+    <div class="stat-label">内定件数</div>
+    <div class="stat-value">{{ stats["offers"] }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="toolbar">
+    <h2>企業一覧</h2>
+    <form method="get" action="/req03/companies" class="inline-form">
+      <input type="text" name="q" value="{{ q }}" placeholder="企業名で検索">
+      <button type="submit">検索</button>
+    </form>
+  </div>
+
+  {% if companies %}
+  <div class="table-wrap">
+    <table>
+      <tr><th>企業名</th><th>応募者</th><th>面接中</th><th>内定</th><th>お見送り</th></tr>
+      {% for c in companies %}
+      <tr{% if selected_name == c["company_name"] %} class="row-selected"{% endif %}>
+        <td>
+          <a href="/req03/companies?company={{ c['company_name']|urlencode }}{% if q %}&q={{ q|urlencode }}{% endif %}">
+            {{ c["company_name"] }}
+          </a>
+        </td>
+        <td>{{ c["student_count"] }}人</td>
+        <td>{{ c["interview_count"] }}</td>
+        <td>{{ c["offer_count"] }}</td>
+        <td>{{ c["rejected_count"] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">該当する企業がありません。</p>
+  {% endif %}
+</div>
+
+{% if selected_name %}
+{% set status_class = {
+  "検討中": "badge-gray", "応募済み": "badge-blue", "書類選考": "badge-blue",
+  "一次面接": "badge-orange", "二次面接": "badge-orange", "最終面接": "badge-orange",
+  "内定": "badge-green", "お見送り": "badge-red"
+} %}
+<div class="card">
+  <h2>{{ selected_name }} の志望者({{ applicants|length }}名)</h2>
+  <div class="table-wrap">
+    <table>
+      <tr><th>学生名</th><th>志望職種</th><th>ステータス</th><th>最終メモ</th></tr>
+      {% for a in applicants %}
+      <tr>
+        <td><a href="/req04/{{ a['student_id'] }}">{{ a["student_name"] }}</a></td>
+        <td>{{ a["job_type"] or "-" }}</td>
+        <td><span class="badge {{ status_class.get(a['status'], 'badge-gray') }}">{{ a["status"] }}</span></td>
+        <td>{{ a["last_update"] or "-" }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  <p><a href="/req03/companies{% if q %}?q={{ q|urlencode }}{% endif %}">× 選択を解除</a></p>
+</div>
+{% elif unknown_company %}
+<div class="card">
+  <p class="muted">「{{ unknown_company }}」の応募データは見つかりませんでした。</p>
+</div>
+{% endif %}
+{% endblock %}

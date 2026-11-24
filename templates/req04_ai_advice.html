@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}AI面接アドバイス{% endblock %}
+{% block content %}
+<p class="muted"><a href="/req04/{{ student['id'] }}">← {{ student["name"] }} の詳細に戻る</a></p>
+<h1>AI面接アドバイス</h1>
+
+<div class="card">
+  <div class="card-head">
+    <h2>{{ student["name"] }} / {{ company["company_name"] }}</h2>
+    <span class="badge badge-purple">ChatGPT</span>
+  </div>
+  <p class="muted">
+    志望職種: {{ company["job_type"] or "-" }} / ステータス: {{ company["status"] }}
+  </p>
+
+  {% if error %}
+  <p class="alert-text">{{ error }}</p>
+  {% else %}
+  <div class="advice-body">{{ advice }}</div>
+  <p class="muted">AIの提案です。内容を確認し、必要に応じて教員の判断で修正してください。</p>
+  <form method="post" action="/req04/{{ student['id'] }}/guidance">
+    <input type="hidden" name="category" value="面接">
+    <textarea name="memo" hidden>{{ advice }}</textarea>
+    <button type="submit">このアドバイスを指導メモに保存</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if memos %}
+<div class="card">
+  <h2>参照した選考メモ</h2>
+  <ul class="company-list">
+    {% for m in memos %}
+    <li>
+      <span class="muted">{{ m["created_at"] }}</span>
+      {{ m["memo"] }}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}
